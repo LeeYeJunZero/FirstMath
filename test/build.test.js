@@ -17,6 +17,9 @@ test('빌드: 메인·급식 페이지와 학교 목록', () => {
   assert.match(home, /href="school\/"/);
   assert.match(home, /id="schoolQ"[^]*assets\/js\/school\.js/); // 메인에도 학교 검색 + 스크립트
   assert.doesNotMatch(home, /퍼스트티쳐/); // 복사해 온 문구가 남지 않게
+  assert.match(home, /assets\/css\/site\.css/);
+  assert.doesNotMatch(home, /material\.css|theme-material|hero-canvas|pretendard/); // 퍼스트티쳐 디자인과 분리
+  assert.ok(fs.existsSync(path.join(out, 'assets/css/site.css')));
   const page = fs.readFileSync(path.join(out, 'school/index.html'), 'utf8');
   assert.match(page, /assets\/js\/school\.js/);
   const list = JSON.parse(fs.readFileSync(path.join(out, 'school/schools.json'), 'utf8'));

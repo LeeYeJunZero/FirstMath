@@ -91,19 +91,6 @@
   const onScroll = () => nav?.classList.toggle('scrolled', window.scrollY > 8);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
-  // Material 리플
-  document.addEventListener('pointerdown', (e) => {
-    const btn = e.target.closest('.btn, .fab, .tab');
-    if (!btn) return;
-    const r = btn.getBoundingClientRect();
-    const size = Math.max(r.width, r.height);
-    const s = document.createElement('span');
-    s.className = 'ripple';
-    s.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px`;
-    btn.appendChild(s);
-    setTimeout(() => s.remove(), 600);
-  });
-
   // 과정 카드 → 폼 과정 자동 선택
   document.querySelectorAll('[data-course]').forEach((a) => a.addEventListener('click', () => {
     const sel = document.getElementById('f-subject');
@@ -150,21 +137,6 @@
       lead.scrollTop = 0;
     };
     const openLead = () => { if (!lead.open) { showStep(1); lead.showModal(); } };
-    // 접수 완료 축하 효과
-    const burst = () => {
-      if (!motionOK) return;
-      const box = document.createElement('div');
-      box.className = 'lead-burst';
-      const colors = ['#6750a4', '#00897b', '#1565c0', '#f9a825', '#e91e63'];
-      for (let i = 0; i < 48; i++) {
-        const p = document.createElement('i');
-        const a = Math.random() * Math.PI * 2, d = 110 + Math.random() * 230;
-        p.style.cssText = `--x:${Math.cos(a) * d}px;--y:${Math.sin(a) * d + 90}px;--r:${Math.random() * 720 - 360}deg;background:${colors[i % colors.length]};animation-delay:${Math.random() * 120}ms`;
-        box.appendChild(p);
-      }
-      lead.appendChild(box);
-      setTimeout(() => box.remove(), 1700);
-    };
     const fieldOf = (n) => leadForm.elements.namedItem(n);
     const leadMsg = leadForm.querySelector('.form-msg');
     const fail = (text, focusName) => {
@@ -274,7 +246,6 @@
         await sendInquiry(data);
         leadForm.reset(); clearAddr(); syncFields();
         showStep(3);
-        burst();
         try { sessionStorage.setItem(DONE_KEY, '1'); } catch { /* 저장 불가 */ }
       } catch (err) {
         fail(sendError(err));
@@ -561,18 +532,6 @@
     else if (st.token && Date.now() - (st.at || 0) < 864e5) poll(); // 최근 대화가 있으면 그사이 온 답장 확인
   }
 
-  // ───── 시선 유도 효과 ─────
-  // 스크롤 진행 표시줄
-  const bar = document.querySelector('.scroll-bar');
-  let barTick = false;
-  const paintBar = () => {
-    barTick = false;
-    const max = document.documentElement.scrollHeight - innerHeight;
-    if (bar) bar.style.transform = `scaleX(${max > 0 ? Math.min(scrollY / max, 1) : 0})`;
-  };
-  window.addEventListener('scroll', () => { if (!barTick) { barTick = true; requestAnimationFrame(paintBar); } }, { passive: true });
-  paintBar();
-
   // 현재 보고 있는 섹션을 메뉴에 표시
   if ('IntersectionObserver' in window) {
     const links = new Map([...document.querySelectorAll('.nav-links a[href^="#"]:not(.btn)')].map((a) => [a.getAttribute('href').slice(1), a]));
@@ -580,196 +539,12 @@
       for (const e of entries) links.get(e.target.id)?.classList.toggle('active', e.isIntersecting);
     }, { rootMargin: '-45% 0px -50% 0px' });
     links.forEach((_, id) => { const s = document.getElementById(id); if (s) spy.observe(s); });
-  }
-
-  // 아래 효과는 '동작 줄이기' 설정 방문자에게는 적용하지 않음
-  if (motionOK) {
-    // 첫 화면 제목: 글자가 차례로 올라오고 마지막 줄은 색이 흐름
-    const h1 = document.querySelector('.hero h1');
-    if (h1) {
-      const lines = [...h1.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent);
-      h1.setAttribute('aria-label', lines.join(' '));
-      h1.textContent = '';
-      let n = 0;
-      lines.forEach((line, li) => {
-        if (li) h1.appendChild(document.createElement('br'));
-        if (li === lines.length - 1 && lines.length > 1) {
-          const mask = document.createElement('span'), inner = document.createElement('span');
-          mask.className = 'grad-mask'; inner.className = 'grad'; inner.textContent = line;
-          mask.setAttribute('aria-hidden', 'true'); mask.appendChild(inner); h1.appendChild(mask);
-          return;
-        }
-        line.split(' ').forEach((w, wi) => {
-          if (wi) h1.appendChild(document.createTextNode(' '));
-          const word = document.createElement('span');
-          word.className = 'word'; word.setAttribute('aria-hidden', 'true');
-          for (const ch of w) {
-            const c = document.createElement('span');
-            c.className = 'ch'; c.textContent = ch; c.style.setProperty('--n', n++);
-            word.appendChild(c);
-          }
-          h1.appendChild(word);
-        });
-      });
-    }
-
-    // 첫 화면 배경: 떠다니는 수식·기호 (화면에 보일 때만 동작)
-    const canvas = document.querySelector('.hero-canvas');
-    const ctx = canvas?.getContext('2d');
-    if (ctx) {
-      const glyphs = ['∑', 'π', '√', 'x²', 'Aa', '</>', '÷', '∞', '{ }', '%', 'A+', 'y=ax'];
-      const small = innerWidth < 720;
-      let w = 0, h = 0, on = true, raf = 0, mx = 0, my = 0;
-      const items = Array.from({ length: Math.max(6, Math.min(small ? 16 : 38, Math.round((canvas.clientWidth * canvas.clientHeight) / 22000))) }, (_, i) => ({
-        g: glyphs[i % glyphs.length], x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7,
-        s: 0.00035 + Math.random() * 0.0007, p: Math.random() * 6.28
-      }));
-      const color = getComputedStyle(body).getPropertyValue('--primary').trim() || '#6750a4';
-      const size = () => {
-        const dpr = Math.min(devicePixelRatio || 1, 2), r = canvas.getBoundingClientRect();
-        w = r.width; h = r.height; canvas.width = w * dpr; canvas.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      };
-      const draw = (t) => {
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = color; ctx.textAlign = 'center';
-        for (const it of items) {
-          it.y -= it.s * it.z; if (it.y < -0.08) { it.y = 1.08; it.x = Math.random(); }
-          const x = it.x * w + Math.sin(t / 1600 + it.p) * 18 * it.z - mx * 34 * it.z;
-          const y = it.y * h - my * 34 * it.z;
-          ctx.globalAlpha = 0.04 + it.z * 0.11;
-          ctx.font = `800 ${Math.round(14 + it.z * 26)}px system-ui, sans-serif`;
-          ctx.fillText(it.g, x, y);
-        }
-        if (on) raf = requestAnimationFrame(draw);
-      };
-      size();
-      window.addEventListener('resize', size, { passive: true });
-      window.addEventListener('pointermove', (e) => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; }, { passive: true });
-      new IntersectionObserver(([e]) => {
-        const vis = e.isIntersecting;
-        if (vis && !on) { on = true; raf = requestAnimationFrame(draw); } else if (!vis) { on = false; cancelAnimationFrame(raf); }
-      }).observe(canvas);
-      raf = requestAnimationFrame(draw);
-    }
-
-    // 스크롤 등장: 좌우에서 번갈아, 같은 줄의 카드는 순서대로
-    const countUp = (el) => {
-      const end = +el.dataset.count, t0 = performance.now();
-      const step = (t) => {
-        const p = Math.min((t - t0) / 1500, 1);
-        el.textContent = Math.round(end * (1 - (1 - p) ** 3));
-        if (p < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    };
-    if ('IntersectionObserver' in window) {
-      const isSchoolPage = body.classList.contains('school-page'); // 카드가 많아 화면에 들어오기 전에 미리 표시
+    // 스크롤 등장: 섹션 제목·카드가 화면에 들어올 때 한 번 ('동작 줄이기' 설정이면 생략)
+    if (motionOK) {
       const reveal = new IntersectionObserver((entries) => {
-        for (const e of entries) if (e.isIntersecting) {
-          e.target.classList.add('in'); reveal.unobserve(e.target);
-          const num = e.target.querySelector?.('[data-count]');
-          if (num) countUp(num);
-        }
-      }, { threshold: isSchoolPage ? 0.01 : 0.12, rootMargin: isSchoolPage ? '0px 0px 14% 0px' : '0px 0px -6% 0px' });
-      document.querySelectorAll('main .section-title, main .section-sub, main .trial-badge, main .trial-ring, main .trial-cta, main .card:not(.apply-form), main .steps, main .school-section-head').forEach((el) => {
-        const idx = [...el.parentElement.children].indexOf(el);
-        el.style.setProperty('--d', `${Math.min(idx, 5) * 90}ms`);
-        if (el.matches('.school-card')) el.style.setProperty('--d', `${(idx % 4) * 35}ms`);
-        if (el.matches('.grid > .card')) el.style.setProperty('--x', idx % 2 ? '60px' : '-60px');
-        el.classList.add('reveal');
-        reveal.observe(el);
-      });
-    }
-
-    // 섹션 뒤의 큰 글자
-    const decos = [['#worries', '?', 0.22], ['#exams', 'A+', -0.18], ['#features', '1:1', 0.2]].flatMap(([sel, text, speed]) => {
-      const sec = document.querySelector(sel);
-      if (!sec) return [];
-      const d = document.createElement('span');
-      d.className = 'deco'; d.textContent = text; d.setAttribute('aria-hidden', 'true');
-      sec.classList.add('has-deco'); sec.prepend(d);
-      return [{ sec, d, speed }];
-    });
-
-    // 스크롤에 연동: 첫 화면 카드 펼침, 단계 진행선, 큰 글자 이동
-    const heroEl = document.querySelector('.hero');
-    const heroText = document.querySelector('.hero-text');
-    const heroStack = document.querySelector('.hero-stack');
-    const stepsEl = document.querySelector('.steps');
-    const stepItems = stepsEl ? [...stepsEl.children] : [];
-    let fxTick = false;
-    const paintFx = () => {
-      fxTick = false;
-      const vh = innerHeight, y = scrollY;
-      const hh = heroEl?.offsetHeight || 1;
-      if (y < hh * 1.2) {
-        const p = Math.min(y / hh, 1);
-        if (heroText) { heroText.style.transform = `translateY(${(p * 80).toFixed(1)}px)`; heroText.style.opacity = (1 - p * 0.85).toFixed(3); }
-        heroStack?.style.setProperty('--sp', p.toFixed(3));
-      }
-      if (stepsEl) {
-        const top = stepsEl.getBoundingClientRect().top;
-        const prog = Math.max(0, Math.min((vh * 0.9 - top) / (vh * 0.55), 1));
-        stepsEl.style.setProperty('--prog', prog.toFixed(3));
-        stepItems.forEach((s, i) => s.classList.toggle('lit', prog >= (i + 0.4) / stepItems.length));
-      }
-      for (const { sec, d, speed } of decos) {
-        const r = sec.getBoundingClientRect();
-        if (r.bottom > 0 && r.top < vh) d.style.transform = `translateY(${((r.top + r.height / 2 - vh / 2) * speed).toFixed(1)}px) rotate(${((r.top / vh) * 12).toFixed(2)}deg)`;
-      }
-    };
-    window.addEventListener('scroll', () => { if (!fxTick) { fxTick = true; requestAnimationFrame(paintFx); } }, { passive: true });
-    window.addEventListener('resize', paintFx, { passive: true });
-    paintFx();
-
-    // 첫 화면 문구: 타자기처럼 지우고 다시 입력
-    const rotor = document.querySelector('[data-rotate]');
-    const words = rotor?.dataset.rotate.split('|') || [];
-    if (words.length > 1) {
-      let w = 0, c = words[0].length, erasing = true;
-      const type = () => {
-        rotor.textContent = words[w].slice(0, c);
-        if (erasing) {
-          if (c > 0) { c--; setTimeout(type, 45); } else { erasing = false; w = (w + 1) % words.length; setTimeout(type, 180); }
-        } else if (c < words[w].length) { c++; setTimeout(type, 85); } else { erasing = true; setTimeout(type, 1700); }
-      };
-      setTimeout(type, 1900);
-    }
-
-    // 마우스를 따라 움직이는 효과 (터치 기기 제외)
-    if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
-      const hero = document.querySelector('.hero');
-      const stack = document.querySelector('.hero-stack');
-      hero?.addEventListener('pointermove', (e) => {
-        if (!stack) return;
-        const r = hero.getBoundingClientRect();
-        stack.style.setProperty('--px', `${((e.clientX - r.left) / r.width - 0.5) * 22}px`);
-        stack.style.setProperty('--py', `${((e.clientY - r.top) / r.height - 0.5) * 22}px`);
-      });
-      document.querySelectorAll('.subject-card, .worry, .exam, .step, .school-card, .study-card, .fact-card').forEach((el) => {
-        el.addEventListener('pointermove', (e) => {
-          const r = el.getBoundingClientRect();
-          const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-          el.style.transform = `perspective(800px) rotateX(${(-y * 5).toFixed(2)}deg) rotateY(${(x * 5).toFixed(2)}deg) translateY(-4px)`;
-        });
-        el.addEventListener('pointerleave', () => { el.style.transform = ''; });
-      });
-
-      // 카드 위 빛 번짐
-      document.querySelectorAll('main .card').forEach((el) => el.addEventListener('pointermove', (e) => {
-        const r = el.getBoundingClientRect();
-        el.style.setProperty('--mx', `${e.clientX - r.left}px`);
-        el.style.setProperty('--my', `${e.clientY - r.top}px`);
-      }));
-
-      // 신청 버튼이 마우스 쪽으로 끌려옴
-      document.querySelectorAll('.hero-actions .btn-primary, .trial-cta .btn-primary').forEach((b) => {
-        b.addEventListener('pointermove', (e) => {
-          const r = b.getBoundingClientRect();
-          b.style.transform = `translate(${((e.clientX - r.left - r.width / 2) * 0.22).toFixed(1)}px, ${((e.clientY - r.top - r.height / 2) * 0.32).toFixed(1)}px) scale(1.05)`;
-        });
-        b.addEventListener('pointerleave', () => { b.style.transform = ''; });
-      });
+        for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); reveal.unobserve(e.target); }
+      }, { rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('main .sec-head, main .card:not(.apply-form), main .numline li, main .rules').forEach((el) => { el.classList.add('reveal'); reveal.observe(el); });
     }
   }
 })();

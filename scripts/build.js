@@ -26,7 +26,7 @@ fs.rmSync(out, { recursive: true, force: true });
 copyDir(path.join(root, 'public/assets'), path.join(out, 'assets'));
 
 // 배포마다 CSS·JS 주소가 달라지게 해서 브라우저에 남은 옛 파일을 쓰지 않게 함
-const assetV = crypto.createHash('sha1').update(['css/base.css', 'css/material.css', 'js/site.js', 'js/school.js'].map((f) => fs.readFileSync(path.join(root, 'public/assets', f))).join('')).digest('hex').slice(0, 8);
+const assetV = crypto.createHash('sha1').update(['css/site.css', 'js/site.js', 'js/school.js'].map((f) => fs.readFileSync(path.join(root, 'public/assets', f))).join('')).digest('hex').slice(0, 8);
 const opts = { assetV, apiBase, canonical, verify: cfg.verification || {} };
 
 // 학교 검색 목록: [학교명, 중/고, 지역, 교육청코드, 학교코드] (data/schools.json 은 npm run fetch:schools 로 갱신)
