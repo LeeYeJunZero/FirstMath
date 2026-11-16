@@ -1,0 +1,13 @@
+{
+  "name": "firstmath",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "퍼스트매스 — 중·고등 수학 1:1 과외 + 학교별 급식·학사일정",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node --test test/*.test.js",
+    "fetch:schools": "node --env-file=.env scripts/fetch-schools.js"
+  }
+}
