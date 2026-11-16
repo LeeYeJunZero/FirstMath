@@ -155,6 +155,7 @@
   const open = (s) => {
     school = s;
     const [name, kind, place] = s;
+    try { localStorage.setItem('fm_school', name); } catch { /* 저장 불가: 유입 표시만 빠짐 */ } // site.js 가 상담 신청에 '유입' 표시
     if (pageTitle) {
       pageTitle.textContent = `${name} 급식·학사일정`;
       document.title = `${name} 급식표 · 학사일정 | ${document.body.dataset.name}`;

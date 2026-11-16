@@ -115,6 +115,10 @@
   const sendInquiry = async (data) => {
     // 퍼스트티쳐와 같은 Worker·텔레그램을 쓰므로 어느 사이트 문의인지 과목 앞에 표시
     data = { ...data, subject: [body.dataset.name, data.subject].filter(Boolean).join(' · ') };
+    // 급식·학사일정에서 학교를 본 방문자의 신청이면 맨 앞에 표시 (Worker /stats 가 이 문구로 전환을 셈)
+    let viewed = '';
+    try { viewed = localStorage.getItem('fm_school') || ''; } catch { /* 저장 불가 */ }
+    if (viewed) data.message = [`유입: 급식·학사일정 (${viewed})`, data.message].filter(Boolean).join('\n');
     const res = await fetch(API + '/api/inquiry', { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     const j = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(j.error || '전송에 실패했습니다.');
