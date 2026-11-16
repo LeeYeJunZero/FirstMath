@@ -199,7 +199,7 @@ ${navBar(site, '', 'home')}
         </ul>
         <div class="hero-actions">
           <a class="btn btn-primary btn-lg" href="#apply" data-lead-open>무료 학습 30분 신청</a>
-          <a class="btn btn-ghost btn-lg" href="school/">우리 학교 급식·학사일정</a>
+          <a class="btn btn-ghost btn-lg" href="#school">우리 학교 급식·학사일정</a>
         </div>
       </div>
       <div class="hero-stack" aria-hidden="true">
@@ -239,7 +239,15 @@ ${navBar(site, '', 'home')}
     </div>
   </section>
 
-  <section id="exams" class="section section-alt">
+  <section id="school" class="section section-alt">
+    <div class="wrap">
+      <h2 class="section-title">우리 아이 학교, 확인해 볼까요?</h2>
+      <p class="section-sub">학교 이름만 입력하면 이번 주 급식과 이달 학사일정을 바로 보여드립니다.</p>
+      ${schoolTool(site, '')}
+    </div>
+  </section>
+
+  <section id="exams" class="section">
     <div class="wrap">
       <h2 class="section-title">중등·고등 수학 내신과 모의고사 대비</h2>
       <p class="section-sub">학교와 시험에 맞춰 1:1로 준비합니다.</p>
@@ -253,7 +261,7 @@ ${navBar(site, '', 'home')}
     </div>
   </section>
 
-  <section id="features" class="section">
+  <section id="features" class="section section-alt">
     <div class="wrap">
       <h2 class="section-title">왜 ${esc(site.name)}인가요?</h2>
       <div class="grid grid-4">
@@ -266,7 +274,7 @@ ${navBar(site, '', 'home')}
     </div>
   </section>
 
-  <section id="courses" class="section section-alt">
+  <section id="courses" class="section">
     <div class="wrap">
       <h2 class="section-title">1:1 수학 수업 과정</h2>
       <div class="grid grid-3">
@@ -281,7 +289,7 @@ ${navBar(site, '', 'home')}
     </div>
   </section>
 
-  <section id="tutors" class="section">
+  <section id="tutors" class="section section-alt">
     <div class="wrap">
       <h2 class="section-title">선생님 소개</h2>
       <div class="grid grid-3">
@@ -297,7 +305,7 @@ ${navBar(site, '', 'home')}
     </div>
   </section>
 
-  <section id="faq" class="section section-alt">
+  <section id="faq" class="section">
     <div class="wrap narrow">
       <h2 class="section-title">자주 묻는 질문</h2>
       <div class="faq-list">
@@ -306,7 +314,7 @@ ${navBar(site, '', 'home')}
     </div>
   </section>
 
-  <section id="apply" class="section">
+  <section id="apply" class="section section-alt">
     <div class="wrap apply">
       <div class="apply-info">
         <h2 class="section-title left">무료 학습 30분 신청</h2>
@@ -343,11 +351,39 @@ ${floatCta(site)}
 <div class="toast" role="status" aria-live="polite"></div>
 ${leadDialog(site.leadSubjects)}
 <script src="${A}/js/site.js${v}" defer></script>
+<script src="${A}/js/school.js${v}" defer></script>
 </body>
 </html>`;
 }
 
-// 급식·학사일정 (dist/school/). 학교 목록은 같은 폴더 schools.json, 급식·일정은 브라우저가 NEIS 에서 직접 받음 (assets/js/school.js)
+// 학교 검색 → 급식·학사일정 (메인 페이지와 school/ 가 함께 씀, assets/js/school.js 가 동작)
+// root: 사이트 맨 위까지의 상대 경로. 학교 목록(school/schools.json)은 검색창을 누를 때만 받음
+const schoolTool = (site, root) => `<div class="school-tool" data-root="${root}">
+    <div class="school-finder">
+      <label class="finder-search"><span aria-hidden="true">⌕</span><input id="schoolQ" type="search" placeholder="학교 이름 또는 지역 (예: 대치중, 강남구)" aria-label="학교 이름 검색" autocomplete="off"></label>
+    </div>
+    <p class="school-result-note" id="schoolNote" hidden></p>
+    <div class="school-grid" id="schoolResults"></div>
+
+    <div id="schoolView" hidden>
+      <div class="sv-head">
+        <div><h2 id="svName"></h2><p id="svPlace"></p></div>
+        <a class="btn btn-primary" id="svApply" href="${root || './'}">이 학교 수학 무료 학습 30분</a>
+      </div>
+      <section class="detail-section">
+        <div class="sv-bar"><h3>급식</h3><div class="pager" data-no-track><button class="btn btn-outline" type="button" data-move="week" data-step="-1" aria-label="지난주">‹</button><b id="weekLabel" aria-live="polite"></b><button class="btn btn-outline" type="button" data-move="week" data-step="1" aria-label="다음 주">›</button></div></div>
+        <div class="meal-grid" id="meals"></div>
+        <p class="sv-legend">알레르기 번호: 1 난류 · 2 우유 · 3 메밀 · 4 땅콩 · 5 대두 · 6 밀 · 7 고등어 · 8 게 · 9 새우 · 10 돼지고기 · 11 복숭아 · 12 토마토 · 13 아황산류 · 14 호두 · 15 닭고기 · 16 쇠고기 · 17 오징어 · 18 조개류 · 19 잣</p>
+      </section>
+      <section class="detail-section">
+        <div class="sv-bar"><h3>학사일정</h3><div class="pager" data-no-track><button class="btn btn-outline" type="button" data-move="month" data-step="-1" aria-label="지난달">‹</button><b id="monthLabel" aria-live="polite"></b><button class="btn btn-outline" type="button" data-move="month" data-step="1" aria-label="다음 달">›</button></div></div>
+        <ul class="event-list" id="events"></ul>
+      </section>
+    </div>
+    <p class="school-source">급식·학사일정은 교육부 나이스(NEIS) 교육정보 개방 포털의 공개 자료이며, 학교 사정에 따라 바뀔 수 있습니다. ${esc(site.name)}은(는) 각 학교와 제휴 관계가 없습니다.</p>
+  </div>`;
+
+// 급식·학사일정 전용 페이지 (dist/school/): 검색 결과 공유·검색엔진 노출용
 export function renderSchoolPage(site, total, opts = {}) {
   const A = '../assets';
   const v = opts.assetV ? `?v=${opts.assetV}` : '';
@@ -371,28 +407,7 @@ ${navBar(site, '../', 'school')}
     </div></div>
   </section>
   <div class="wrap school-main">
-    <div class="school-finder">
-      <label class="finder-search"><span aria-hidden="true">⌕</span><input id="schoolQ" type="search" placeholder="학교 이름 또는 지역 (예: 대치중, 강남구)" aria-label="학교 이름 검색" autocomplete="off"></label>
-    </div>
-    <p class="school-result-note" id="schoolNote" hidden></p>
-    <div class="school-grid" id="schoolResults"></div>
-
-    <div id="schoolView" hidden>
-      <div class="sv-head">
-        <div><h2 id="svName"></h2><p id="svPlace"></p></div>
-        <a class="btn btn-primary" id="svApply" href="../">이 학교 수학 무료 학습 30분</a>
-      </div>
-      <section class="detail-section">
-        <div class="sv-bar"><h3>급식</h3><div class="pager" data-no-track><button class="btn btn-outline" type="button" data-move="week" data-step="-1" aria-label="지난주">‹</button><b id="weekLabel" aria-live="polite"></b><button class="btn btn-outline" type="button" data-move="week" data-step="1" aria-label="다음 주">›</button></div></div>
-        <div class="meal-grid" id="meals"></div>
-        <p class="sv-legend">알레르기 번호: 1 난류 · 2 우유 · 3 메밀 · 4 땅콩 · 5 대두 · 6 밀 · 7 고등어 · 8 게 · 9 새우 · 10 돼지고기 · 11 복숭아 · 12 토마토 · 13 아황산류 · 14 호두 · 15 닭고기 · 16 쇠고기 · 17 오징어 · 18 조개류 · 19 잣</p>
-      </section>
-      <section class="detail-section">
-        <div class="sv-bar"><h3>학사일정</h3><div class="pager" data-no-track><button class="btn btn-outline" type="button" data-move="month" data-step="-1" aria-label="지난달">‹</button><b id="monthLabel" aria-live="polite"></b><button class="btn btn-outline" type="button" data-move="month" data-step="1" aria-label="다음 달">›</button></div></div>
-        <ul class="event-list" id="events"></ul>
-      </section>
-    </div>
-    <p class="school-source">급식·학사일정은 교육부 나이스(NEIS) 교육정보 개방 포털의 공개 자료이며, 학교 사정에 따라 바뀔 수 있습니다. ${esc(site.name)}은(는) 각 학교와 제휴 관계가 없습니다.</p>
+    ${schoolTool(site, '../')}
   </div>
 </main>
 ${footer(site)}

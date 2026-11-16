@@ -49,12 +49,14 @@
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const input = $('schoolQ'), results = $('schoolResults'), note = $('schoolNote'), view = $('schoolView');
   const mealsBox = $('meals'), eventsBox = $('events');
+  const root = document.querySelector('.school-tool').dataset.root; // 메인 '' / school/ '../'
+  const pageTitle = $('pageTitle'); // school/ 페이지에만 있음
   const KIND = { 중: '중학교', 고: '고등학교' };
   const MAX = 24;
 
   // 학교 목록: [학교명, 중/고, 지역, 교육청코드, 학교코드]
   let list = null, loading = null;
-  const load = () => (loading ||= fetch('schools.json').then((r) => r.json()).then((j) => { list = j; }).catch(() => { loading = null; }));
+  const load = () => (loading ||= fetch(`${root}school/schools.json`).then((r) => r.json()).then((j) => { list = j; }).catch(() => { loading = null; }));
   const norm = (x) => x.replace(/\s+/g, '').toLowerCase();
   const say = (text) => { note.textContent = text; note.hidden = !text; };
 
@@ -69,7 +71,8 @@
     results.textContent = '';
     for (const [name, kind, place, , code] of hits.slice(0, MAX)) {
       const a = el('a', 'card school-card');
-      a.href = `?code=${code}`;
+      a.href = `${root}school/?code=${code}`; // 새 탭·공유용 주소. 그냥 누르면 아래에서 이 자리에 바로 표시
+      a.dataset.code = code;
       a.append(el('b', 'school-name', name), el('span', '', `${place} · ${KIND[kind]}`));
       results.append(a);
     }
@@ -152,15 +155,27 @@
   const open = (s) => {
     school = s;
     const [name, kind, place] = s;
-    $('pageTitle').textContent = `${name} 급식·학사일정`;
-    document.title = `${name} 급식표 · 학사일정 | ${document.body.dataset.name}`;
+    if (pageTitle) {
+      pageTitle.textContent = `${name} 급식·학사일정`;
+      document.title = `${name} 급식표 · 학사일정 | ${document.body.dataset.name}`;
+      history.replaceState(null, '', `?code=${s[4]}`);
+    }
     $('svName').textContent = name;
     $('svPlace').textContent = `${place} · ${KIND[kind]}`;
-    $('svApply').href = `../?school=${encodeURIComponent(name)}`; // 메인 페이지가 학교를 채운 신청 팝업을 띄움
+    $('svApply').href = `${root || './'}?school=${encodeURIComponent(name)}`; // 메인 페이지가 학교를 채운 신청 팝업을 띄움
     view.hidden = false;
     showMeals();
     showEvents();
   };
+
+  results.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-code]');
+    if (!a || !list || e.ctrlKey || e.metaKey || e.shiftKey) return; // 새 탭으로 열기는 그대로 둠
+    e.preventDefault();
+    open(list.find((x) => x[4] === a.dataset.code));
+    results.textContent = ''; say('');
+    view.scrollIntoView({ block: 'start' });
+  });
 
   view.addEventListener('click', (e) => {
     const b = e.target.closest('[data-move]');

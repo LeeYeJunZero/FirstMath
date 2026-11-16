@@ -549,3 +549,6 @@ main { overflow-x: clip; }
 .event-list time { min-width: 7.5em; font-weight: 700; font-size: 14px; color: var(--primary); }
 .event-list small { font-size: 12px; opacity: .65; }
 @media (max-width: 720px) { .sv-bar { flex-wrap: wrap; } .meal-grid { grid-template-columns: minmax(0, 1fr); } }
+.school-tool [hidden] { display: none !important; }
+.section .school-finder { position: static; padding-top: 0; background: none; } /* 메인 페이지 안에서는 검색창을 고정하지 않음 */
+#schoolView { scroll-margin-top: 84px; }
